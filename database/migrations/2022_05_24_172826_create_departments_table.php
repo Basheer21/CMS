@@ -19,6 +19,7 @@ return new class extends Migration
             $table->integer('director_id');
             $table->string('name');
             $table->timestamps();
+            $table->softDeletes();
         });
     }
 

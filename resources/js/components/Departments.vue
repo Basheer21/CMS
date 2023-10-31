@@ -1,18 +1,59 @@
 <template>
-    <h1>Departments</h1>
-
     <div class="row">
         <div class="col-md-12">
             <div class="card">
                 <div class="card-header bg-dark">
+                    <h5 class="float-start text-light">Departments List</h5>
                     <button
-                        class="btn btn-success"
+                        class="btn btn-success float-end"
                         @click="createDepartment"
                         data-bs-toggle="modal"
                         data-bs-target="#exampleModal"
                     >
-                        new department
+                        New Department
                     </button>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover text-center">
+                            <thead>
+                                <tr class="table-success">
+                                    <th>#</th>
+                                    <th>Name</th>
+                                    <th>Director</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr
+                                    v-for="(department, index) in departments"
+                                    :key="index"
+                                >
+                                    <td>{{ index + 1 }}</td>
+                                    <td>{{ department.name }}</td>
+                                    <td>{{ department.director_id }}</td>
+                                    <td>
+                                        <button
+                                            class="btn btn-success mx-1"
+                                            @click="editDepartment(department)"
+                                            data-bs-toggle="modal"
+                                            data-bs-target="#exampleModal"
+                                        >
+                                            <i class="fa fa-edit"></i>
+                                        </button>
+                                        <button
+                                            class="btn btn-danger mx-1"
+                                            @click="
+                                                deleteDepartment(department)
+                                            "
+                                        >
+                                            <i class="fa fa-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
 
                     <!-- Modal -->
                     <div
@@ -29,12 +70,16 @@
                                         class="modal-title"
                                         id="exampleModalLabel"
                                     >
-                                        Create new department
+                                        {{
+                                            editMode
+                                                ? "Edit Department"
+                                                : "Create New Department"
+                                        }}
                                     </h5>
+
                                     <button
                                         type="button"
                                         class="btn-close"
-                                        @click="closeModal"
                                         data-bs-dismiss="modal"
                                         aria-label="Close"
                                     ></button>
@@ -49,7 +94,7 @@
                                                     class="form-control"
                                                     name="name"
                                                     v-model="
-                                                        departmetnsData.name
+                                                        departmentsData.name
                                                     "
                                                 />
                                             </div>
@@ -63,7 +108,7 @@
                                                     name="director_id"
                                                     class="form-control"
                                                     v-model="
-                                                        departmetnsData.director_id
+                                                        departmentsData.director_id
                                                     "
                                                 >
                                                     <option value="" selected>
@@ -91,9 +136,13 @@
                                     <button
                                         type="button"
                                         class="btn btn-success"
-                                        @click="store"
+                                        @click="saveDepartment"
+                                        data-bs-dismiss="modal"
+                                        aria-label="Close"
                                     >
-                                        Save changes
+                                        {{
+                                            editMode ? "Save changes" : "store"
+                                        }}
                                     </button>
                                 </div>
                             </div>
@@ -109,7 +158,10 @@
 export default {
     data() {
         return {
-            departmetnsData: {
+            editMode: "",
+            departments: {},
+            departmentsData: {
+                id: "",
                 name: "",
                 director_id: "",
             },
@@ -117,24 +169,157 @@ export default {
     },
 
     methods: {
-        createDepartment() {
-            // alert("hi");
-            // $('#exampleModal').modal('show');
-            this.showModal = true;
+        saveDepartment() {
+            this.editMode ? this.updateDepartment() : this.store();
         },
 
-        closeModal() {
-            this.showModal = false;
+        editDepartment(department) {
+            this.departmentsData.id = department.id;
+            this.departmentsData.director_id = department.director_id;
+            this.departmentsData.name = department.name;
+            this.editMode = true;
         },
+
+        updateDepartment() {
+            axios
+                .post(
+                    "/api/updateDepartment/" + this.departmentsData.id,
+                    this.departmentsData
+                )
+                .then((response) => {
+                    console.log(
+                        response.data,
+                        "we recived this reponse from update fun"
+                    ); // Handle success
+                })
+                .catch((error) => {
+                    if (error.response) {
+                        console.log(
+                            "Error Response Data:",
+                            error.response.data
+                        );
+                        console.log(
+                            "Error Response Status:",
+                            error.response.status
+                        );
+                        console.log(
+                            "Error Response Headers:",
+                            error.response.headers
+                        );
+                    } else if (error.request) {
+                        console.log("Error Request:", error.request);
+                    } else {
+                        console.log("Error Message:", error.message);
+                    }
+                });
+            this.getDepartments();
+        },
+
+        deleteDepartment(department) {
+            // this.departmentsData.id = department.id;
+            axios
+                .post("/api/deleteDepartment/" + department.id)
+                .then((response) => {
+                    console.log(
+                        response.data,
+                        "we recived this reponse from deleteDepartment fun"
+                    ); // Handle success
+                })
+                .catch((error) => {
+                    if (error.response) {
+                        console.log(
+                            "Error Response Data:",
+                            error.response.data
+                        );
+                        console.log(
+                            "Error Response Status:",
+                            error.response.status
+                        );
+                        console.log(
+                            "Error Response Headers:",
+                            error.response.headers
+                        );
+                    } else if (error.request) {
+                        console.log("Error Request:", error.request);
+                    } else {
+                        console.log("Error Message:", error.message);
+                    }
+                });
+            this.getDepartments();
+        },
+
+        getDepartments() {
+            axios
+                .get("/api/getDepartments")
+                .then((response) => {
+                    this.departments = response.data;
+                    console.log(response.data);
+                })
+                .catch((error) => {
+                    if (error.response) {
+                        console.log(
+                            "Error Response Data:",
+                            error.response.data
+                        );
+                        console.log(
+                            "Error Response Status:",
+                            error.response.status
+                        );
+                        console.log(
+                            "Error Response Headers:",
+                            error.response.headers
+                        );
+                    }
+                });
+        },
+        createDepartment() {
+            this.departmentsData.director_id = this.departmentsData.name = "";
+            this.editMode = false;
+        },
+
         store() {
+            //axios.post("/api/storeDepartment", this.departmentsData);
+            // im adding the below to test the error by axios api if any
+
+            axios
+                .post("/api/storeDepartment", this.departmentsData)
+                .then((response) => {
+                    console.log(
+                        response.data,
+                        "we recived this reponse from store fun"
+                    ); // Handle success
+                })
+                .catch((error) => {
+                    if (error.response) {
+                        console.log(
+                            "Error Response Data:",
+                            error.response.data
+                        );
+                        console.log(
+                            "Error Response Status:",
+                            error.response.status
+                        );
+                        console.log(
+                            "Error Response Headers:",
+                            error.response.headers
+                        );
+                    } else if (error.request) {
+                        console.log("Error Request:", error.request);
+                    } else {
+                        console.log("Error Message:", error.message);
+                    }
+                });
+
             console.log("store method START");
-            console.log(this.departmetnsData);
+            console.log(this.departmentsData);
             console.log("store method END");
+            this.getDepartments();
         },
     },
 
     mounted() {
         console.log("Mounted log");
+        this.getDepartments();
     },
 };
 </script>
